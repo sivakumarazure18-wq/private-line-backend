@@ -108,6 +108,14 @@ app.get("/users/:username/keybundle", authMiddleware, (req, res) => {
   });
 });
 
+// ---- identity key lookup by user ID (needed by the recipient of a first message,
+// who only has the sender's ID, not their username, to verify the handshake) ----
+app.get("/users/by-id/:userId/identity", authMiddleware, (req, res) => {
+  const user = db.prepare("SELECT id, identity_public_key FROM users WHERE id = ?").get(req.params.userId);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json({ userId: user.id, identityPublicKey: user.identity_public_key });
+});
+
 // ---- pull undelivered messages (still just ciphertext) ----
 app.get("/messages/inbox", authMiddleware, (req, res) => {
   const rows = db
